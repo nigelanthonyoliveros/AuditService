@@ -36,7 +36,9 @@ namespace PerformanceAuditing
                     );
                 }
                 );
-            builder.Services.AddScoped<IAuditService,AuditResultsService>();
+
+            builder.Services.AddScoped<IAuditService, AuditResultsService>();
+
             //adding the service
             //int workerCount = builder.Configuration.GetValue<int>("NumberOfServiceWorkers");
             //int workerCount = builder.Configuration.GetValue<WorkerSettings>("WorkerSettings").InitialNumberOfWorkers;
@@ -48,11 +50,11 @@ namespace PerformanceAuditing
             //             return new AuditingWorker(provider.GetRequiredService<ILogger<AuditingWorker>>(),provider.GetRequiredService<WorkerSettings>());
             //         }
 
-                    
+
             //        );
 
             //}
-         
+
 
             var app = builder.Build();
 

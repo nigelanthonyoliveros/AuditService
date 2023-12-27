@@ -4,6 +4,7 @@ using Microsoft.OpenApi.Extensions;
 using PerformanceAuditing.Contracts;
 using PerformanceAuditing.Data;
 using PerformanceAuditing.Services;
+using System;
 
 namespace PerformanceAuditing.Workers
 {
@@ -70,31 +71,28 @@ namespace PerformanceAuditing.Workers
                         responseMessage.StatusCode.GetDisplayName(),
                         (int)responseMessage.StatusCode, 
                         responseTime );
-                    // was able to solve the conflict of using a scoped services inside this worker class
-                    // resources : https://learn.microsoft.com/en-us/dotnet/core/extensions/scoped-service
-                    using (IServiceScope scope = provider.CreateScope())
-                    {
-                        IAuditService scopedAuditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
-                        await scopedAuditService.SaveResult(
-                            new AuditResults()
-                                        {
-                                            AccessTime = startTime,
-                                            Reachable = responseMessage.IsSuccessStatusCode,
-                                            ResponseTime = responseTime,
-                                            URL = url
-                                        });
-                        }
+                    await PersistRecordToDB(new AuditResults()
+                                                {
+                                                    AccessTime = startTime,
+                                                    Reachable = (bool)responseMessage.IsSuccessStatusCode,
+                                                    ResponseTime = responseTime,
+                                                    URL = url
+                                                }
+                    );
                     //await _auditService.SaveResult(new AuditResults() { AccessTime = startTime, Reachable = responseMessage.IsSuccessStatusCode, ResponseTime = responseTime, 
                     //    URL = url });
                 }
                 else
-                {
+                {   
+                    TimeSpan failedResponseTime = DateTime.Now - startTime;
+                    await PersistRecordToDB(new AuditResults() { AccessTime = startTime , ResponseTime =  failedResponseTime , Reachable = false, URL = url});
                     _logger.LogCritical("Unsuccessful ping to {site} with status code : {code}", url, responseMessage.StatusCode);
                 }
             }
             catch (Exception e)
             {
-
+                TimeSpan failedResponseTime = DateTime.Now - startTime;
+                await PersistRecordToDB(new AuditResults() { AccessTime = startTime, ResponseTime =  failedResponseTime, Reachable = false, URL = url });
                 _logger.LogError("Unable to make the HTTP call , due to {error}", e.Message);
                 return;
             }
@@ -105,6 +103,15 @@ namespace PerformanceAuditing.Workers
          
 
         }
-        
+        protected async Task PersistRecordToDB (AuditResults result)
+        {
+            // was able to solve the conflict of using a scoped services inside this worker class
+            // resources : https://learn.microsoft.com/en-us/dotnet/core/extensions/scoped-service
+            using (IServiceScope scope = provider.CreateScope())
+            {
+                IAuditService scopedAuditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+                await scopedAuditService.SaveResult(result);
+            }
+        }
     }
 }

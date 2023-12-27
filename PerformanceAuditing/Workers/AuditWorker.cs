@@ -35,14 +35,6 @@ namespace PerformanceAuditing.Workers
 
             urlservice.AddURL("http://resreq.in");
 
-            //foreach(var item in urlservice._urls)
-            //{
-
-            //    _logger.LogInformation($"Performing audit on {item}");
-            //    await AuditURL(item);
-
-            //}
-
             // using an interval timer, that accepts timespan as a parameter, 
             //getting that paramater value from the configuration that we have in appsettings.json
             PeriodicTimer timer = new PeriodicTimer(TimeSpan.FromMilliseconds(settings.Value.CycleTime));

@@ -12,14 +12,16 @@ namespace PerformanceAuditing.Workers
         private readonly ILogger<AuditWorker> _logger;
         private readonly IOptions<WorkerSettings> settings;
         private readonly URLManagementService urlservice;
-        private readonly IAuditService _auditService;
+        private readonly IServiceProvider provider;
+       
 
-        public AuditWorker(ILogger<AuditWorker> logger, IOptions<WorkerSettings> settings, URLManagementService urlservice , IAuditService auditService )
+        public AuditWorker(ILogger<AuditWorker> logger, IOptions<WorkerSettings> settings, URLManagementService urlservice , IServiceProvider provider)
         {
             this._logger=logger;
             this.settings=settings;
             this.urlservice=urlservice;
-            this._auditService=auditService;
+            this.provider=provider;
+           
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {   
@@ -68,7 +70,22 @@ namespace PerformanceAuditing.Workers
                         responseMessage.StatusCode.GetDisplayName(),
                         (int)responseMessage.StatusCode, 
                         responseTime );
-                    await _auditService.SaveResult(new AuditResults() { AccessTime = startTime, Reachable = responseMessage.IsSuccessStatusCode, ResponseTime = responseTime, URL = url });
+                    // was able to solve the conflict of using a scoped services inside this worker class
+                    // resources : https://learn.microsoft.com/en-us/dotnet/core/extensions/scoped-service
+                    using (IServiceScope scope = provider.CreateScope())
+                    {
+                        IAuditService scopedAuditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+                        await scopedAuditService.SaveResult(
+                            new AuditResults()
+                                        {
+                                            AccessTime = startTime,
+                                            Reachable = responseMessage.IsSuccessStatusCode,
+                                            ResponseTime = responseTime,
+                                            URL = url
+                                        });
+                        }
+                    //await _auditService.SaveResult(new AuditResults() { AccessTime = startTime, Reachable = responseMessage.IsSuccessStatusCode, ResponseTime = responseTime, 
+                    //    URL = url });
                 }
                 else
                 {

@@ -36,7 +36,7 @@ namespace PerformanceAuditing.Workers
             #endregion
             urlservice.SeedFromJson();
 
-            urlservice.AddURL("http://resreq.in");
+            //urlservice.AddURL("http://resreq.in");
 
             // using an interval timer, that accepts timespan as a parameter, 
             //getting that paramater value from the configuration that we have in appsettings.json
@@ -53,6 +53,7 @@ namespace PerformanceAuditing.Workers
                
                 _logger.LogInformation($"Running service at {DateTime.Now.ToString("h:m:s tt")}");
             }
+            
         }
 
         protected async Task AuditURL (string url)

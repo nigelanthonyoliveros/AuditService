@@ -1,0 +1,101 @@
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Extensions;
+using PerformanceAuditing.Contracts;
+using PerformanceAuditing.Data;
+using PerformanceAuditing.Services;
+
+namespace PerformanceAuditing.Workers
+{
+    public class AuditWorker : BackgroundService
+    {
+        private readonly ILogger<AuditWorker> _logger;
+        private readonly IOptions<WorkerSettings> settings;
+        private readonly URLManagementService urlservice;
+        private readonly IAuditService _auditService;
+
+        public AuditWorker(ILogger<AuditWorker> logger, IOptions<WorkerSettings> settings, URLManagementService urlservice , IAuditService auditService )
+        {
+            this._logger=logger;
+            this.settings=settings;
+            this.urlservice=urlservice;
+            this._auditService=auditService;
+        }
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {   
+            
+            #region Log
+            _logger.LogWarning("Service Started....");
+            _logger.LogInformation($"-- Config -- \n" +
+                $"\n Initial Number of Workers: {this.settings.Value.InitialNumberOfWorkers}" +
+                $"\n Cycle Time : {this.settings.Value.CycleTime}" +
+                $"\n JSon Path: {this.settings.Value.JSONFilePath}");
+            #endregion
+            urlservice.SeedFromJson();
+
+            urlservice.AddURL("http://resreq.in");
+
+            //foreach(var item in urlservice._urls)
+            //{
+
+            //    _logger.LogInformation($"Performing audit on {item}");
+            //    await AuditURL(item);
+
+            //}
+
+            // using an interval timer, that accepts timespan as a parameter, 
+            //getting that paramater value from the configuration that we have in appsettings.json
+            PeriodicTimer timer = new PeriodicTimer(TimeSpan.FromMilliseconds(settings.Value.CycleTime));
+
+            while(await timer.WaitForNextTickAsync(stoppingToken) && !stoppingToken.IsCancellationRequested)
+            {
+                string? url = urlservice.NextUrl();
+
+                if(!string.IsNullOrEmpty(url))
+                {
+                    await AuditURL(url);
+                }
+               
+                _logger.LogInformation($"Running service at {DateTime.Now.ToString("h:m:s tt")}");
+            }
+        }
+
+        protected async Task AuditURL (string url)
+        {
+            HttpClient client = new HttpClient();
+            client.BaseAddress = new Uri (url);
+            DateTime startTime = DateTime.Now;
+            try
+            {
+                HttpResponseMessage responseMessage = await client.GetAsync(url);
+                if (responseMessage.IsSuccessStatusCode)
+                {
+                    TimeSpan responseTime = DateTime.Now - startTime;
+                    _logger.LogInformation("Succefully reached the site {site} with \n Status Code : {code} ({stat})  \n Response Time: {time}", 
+                        url.Length > 25 ? string.Concat(url.Substring(0,25),"...") : url , 
+                        responseMessage.StatusCode.GetDisplayName(),
+                        (int)responseMessage.StatusCode, 
+                        responseTime );
+                    await _auditService.SaveResult(new AuditResults() { AccessTime = startTime, Reachable = responseMessage.IsSuccessStatusCode, ResponseTime = responseTime, URL = url });
+                }
+                else
+                {
+                    _logger.LogCritical("Unsuccessful ping to {site} with status code : {code}", url, responseMessage.StatusCode);
+                }
+            }
+            catch (Exception e)
+            {
+
+                _logger.LogError("Unable to make the HTTP call , due to {error}", e.Message);
+                return;
+            }
+            finally
+            {
+                client.Dispose();
+            }
+         
+
+        }
+        
+    }
+}

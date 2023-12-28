@@ -4,6 +4,7 @@ using PerformanceAuditing.Workers;
 using System.Text;
 using System.Text.Json;
 
+
 namespace PerformanceAuditing.Services
 {
     public class URLManagementService
@@ -26,7 +27,7 @@ namespace PerformanceAuditing.Services
                     logger.LogCritical("JSON file was not found.");
                     throw new FileNotFoundException("JSON file was not found.");
                 }
-
+                FileWatcher();
                 using (var reader = new StreamReader(_workerSettings.Value.JSONFilePath ?? defaultJSON, Encoding.UTF8))
                 {
                     jsonContent = reader.ReadToEnd();
@@ -64,6 +65,23 @@ namespace PerformanceAuditing.Services
 
 
         }
+
+        public void FileWatcher()
+        {
+            FileSystemWatcher watcher = new FileSystemWatcher();
+            watcher.Path = @"Data/";
+            watcher.Filter = "urls.json";
+            watcher.Changed += OnFileChanged;
+        }
+
+        private void OnFileChanged(object sender, FileSystemEventArgs e)
+        {
+            if(e.ChangeType == WatcherChangeTypes.Changed)
+            {
+                logger.LogInformation("Something has changed");
+            }
+        }
+
         public void AddURL (string url)
         {
             if(!_urls.Contains(url))

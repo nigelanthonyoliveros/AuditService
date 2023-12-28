@@ -1,4 +1,5 @@
-﻿using PerformanceAuditing.Contracts;
+﻿using Microsoft.EntityFrameworkCore;
+using PerformanceAuditing.Contracts;
 using PerformanceAuditing.Data;
 
 namespace PerformanceAuditing.Services
@@ -30,5 +31,24 @@ namespace PerformanceAuditing.Services
                 _logger.LogError("Error on Saving Results {message}", e.Message);
             }
         }
+
+        public async Task<List<AuditResults>> GetAllResults()
+        {
+            try
+            {
+
+                return await this.context.AuditResults.ToListAsync();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Error on fetching all the results due to : {e.Message}");
+                return new List<AuditResults> () { };
+                throw new Exception(e.Message);
+                
+            }
+
+        }
+
+      
     }
 }

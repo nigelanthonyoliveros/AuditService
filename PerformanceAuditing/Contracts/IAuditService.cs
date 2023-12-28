@@ -6,6 +6,7 @@ namespace PerformanceAuditing.Contracts
     {
         public Task SaveResult(AuditResults auditResults);
         public Task<List<AuditResults>>GetAllResults ();
+        public ValueTask<bool> FlushRecords();
 
     }
 }

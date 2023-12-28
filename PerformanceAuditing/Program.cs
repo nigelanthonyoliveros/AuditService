@@ -26,18 +26,21 @@ namespace PerformanceAuditing
 
             //register the background worker
             builder.Services.AddHostedService<AuditWorker>();
-            //registration of URL Management Service
+            //registration of URL Management Service & Results Service
+          
             builder.Services.AddSingleton<URLManagementService>();
+            builder.Services.AddScoped<IAuditService, AuditResultsService>();
 
+            //! DB Context 
             builder.Services.AddDbContext<ApplicationDBContext>(
                 options => {
                     options.UseSqlServer(
                     builder.Configuration["ConnectionStrings:ApplicationDB"]
                     );
+                    options.LogTo(Console.WriteLine);
                 }
                 );
 
-            builder.Services.AddScoped<IAuditService, AuditResultsService>();
 
             //adding the service
             //int workerCount = builder.Configuration.GetValue<int>("NumberOfServiceWorkers");

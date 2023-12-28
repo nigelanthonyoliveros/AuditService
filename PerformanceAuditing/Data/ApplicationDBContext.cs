@@ -10,7 +10,8 @@ namespace PerformanceAuditing.Data
         {
             
         }
-       
+
+      
         public DbSet<AuditResults> AuditResults { get; set; }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using PerformanceAuditing.Contracts;
 using PerformanceAuditing.Data;
 
@@ -49,6 +51,25 @@ namespace PerformanceAuditing.Services
 
         }
 
-      
+        public async ValueTask<bool> FlushRecords()
+        {
+            try
+            {
+                await this.context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE tblAuditResults");
+
+                //var entities = await context.AuditResults.ToListAsync();
+                //this.context.AuditResults.RemoveRange(entities);
+
+                await this.context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Error on truncation: {e.Message}");
+                return false;
+            }
+
+
+        }
     }
 }

@@ -27,13 +27,15 @@ namespace PerformanceAuditing.Workers
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {   
             
-            #region Log
+            #region -- Log Config --
             _logger.LogWarning("Service Started....");
             _logger.LogInformation($"-- Config -- \n" +
                 $"\n Initial Number of Workers: {this.settings.Value.InitialNumberOfWorkers}" +
                 $"\n Cycle Time : {this.settings.Value.CycleTime}" +
                 $"\n JSon Path: {this.settings.Value.JSONFilePath}");
             #endregion
+
+            //seed the Queue from JSON data
             urlservice.SeedFromJson();
 
             //urlservice.AddURL("http://resreq.in");

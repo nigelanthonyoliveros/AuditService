@@ -55,6 +55,7 @@ namespace PerformanceAuditing.Services
         {
             try
             {
+                _logger.LogInformation("Performing truncation...");
                 await this.context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE tblAuditResults");
 
                 //var entities = await context.AuditResults.ToListAsync();

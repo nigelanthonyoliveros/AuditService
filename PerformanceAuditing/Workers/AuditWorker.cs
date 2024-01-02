@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Extensions;
 using PerformanceAuditing.Contracts;
@@ -14,36 +15,59 @@ namespace PerformanceAuditing.Workers
         private readonly IOptions<WorkerSettings> settings;
         private readonly URLManagementService urlservice;
         private readonly IServiceProvider provider;
-       
+      
 
-        public AuditWorker(ILogger<AuditWorker> logger, IOptions<WorkerSettings> settings, URLManagementService urlservice , IServiceProvider provider)
+        public AuditWorker(ILogger<AuditWorker> logger, IOptions<WorkerSettings> settings, URLManagementService urlservice , IServiceProvider provider )
         {
             this._logger=logger;
             this.settings=settings;
             this.urlservice=urlservice;
             this.provider=provider;
            
+
+            //if (File.Exists(settings.Value.JSONFilePath))
+            //{   
+            //    _logger.LogInformation(Path.GetDirectoryName(settings.Value.JSONFilePath));
+            //    _logger.LogInformation(Path.GetRelativePath(AppDomain.CurrentDomain.BaseDirectory,settings.Value.JSONFilePath));
+            //    _logger.LogInformation("Json file exists!");
+            //}
+
+
+
+
         }
+
+      
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {   
             
-            #region Log
-            _logger.LogWarning("Service Started....");
+            #region -- Log Config --
+            _logger.LogInformation("Service Started....");
             _logger.LogInformation($"-- Config -- \n" +
-                $"\n Initial Number of Workers: {this.settings.Value.InitialNumberOfWorkers}" +
+                //$"\n Initial Number of Workers: {this.settings.Value.InitialNumberOfWorkers}" +
                 $"\n Cycle Time : {this.settings.Value.CycleTime}" +
                 $"\n JSon Path: {this.settings.Value.JSONFilePath}");
             #endregion
+
+            //seed the Queue from JSON data
             urlservice.SeedFromJson();
 
-            //urlservice.AddURL("http://resreq.in");
-
-            // using an interval timer, that accepts timespan as a parameter, 
+            urlservice.Monitor();
+            //using (IServiceScope scope = provider.CreateScope())
+            //{
+            //    IFileWatcher fileWatcher = scope.ServiceProvider.GetRequiredService<IFileWatcher>();
+            //     fileWatcher.Start();
+            //}
+            // using an interval timer
             //getting that paramater value from the configuration that we have in appsettings.json
             PeriodicTimer timer = new PeriodicTimer(TimeSpan.FromMilliseconds(settings.Value.CycleTime));
 
             while(await timer.WaitForNextTickAsync(stoppingToken) && !stoppingToken.IsCancellationRequested)
             {
+
+
+
                 string? url = urlservice.NextUrl();
 
                 if(!string.IsNullOrEmpty(url))
@@ -114,5 +138,13 @@ namespace PerformanceAuditing.Workers
                 await scopedAuditService.SaveResult(result);
             }
         }
+
+        public override void Dispose()
+        { 
+            base.Dispose();
+        }
+
+
+
     }
 }

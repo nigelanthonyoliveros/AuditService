@@ -22,7 +22,7 @@ namespace PerformanceAuditing
 
             //configuring worker settings
             builder.Services.Configure<WorkerSettings>(builder.Configuration.GetSection("WorkerSettings"));
-            //builder.Services.AddSingleton<WorkerSettings>();
+            builder.Services.AddSingleton<WorkerSettings>();
 
             //register the background worker
             builder.Services.AddHostedService<AuditWorker>();
@@ -42,22 +42,6 @@ namespace PerformanceAuditing
                 }
                 );
 
-
-            //adding the service
-            //int workerCount = builder.Configuration.GetValue<int>("NumberOfServiceWorkers");
-            //int workerCount = builder.Configuration.GetValue<WorkerSettings>("WorkerSettings").InitialNumberOfWorkers;
-
-            //for(int  i = 0; i < workerCount; i++)
-            //{
-            //    builder.Services.AddHostedService(
-            //         provider => {
-            //             return new AuditingWorker(provider.GetRequiredService<ILogger<AuditingWorker>>(),provider.GetRequiredService<WorkerSettings>());
-            //         }
-
-
-            //        );
-
-            //}
 
 
             var app = builder.Build();

@@ -25,13 +25,7 @@ namespace PerformanceAuditing.Workers
             this.provider=provider;
            
 
-            //if (File.Exists(settings.Value.JSONFilePath))
-            //{   
-            //    _logger.LogInformation(Path.GetDirectoryName(settings.Value.JSONFilePath));
-            //    _logger.LogInformation(Path.GetRelativePath(AppDomain.CurrentDomain.BaseDirectory,settings.Value.JSONFilePath));
-            //    _logger.LogInformation("Json file exists!");
-            //}
-
+      
 
 
 
@@ -50,15 +44,11 @@ namespace PerformanceAuditing.Workers
                 $"\n JSon Path: {this.settings.Value.JSONFilePath}");
             #endregion
 
-            //seed the Queue from JSON data
+            //initially seed the Queue from JSON data
             urlservice.SeedFromJson();
 
             urlservice.Monitor();
-            //using (IServiceScope scope = provider.CreateScope())
-            //{
-            //    IFileWatcher fileWatcher = scope.ServiceProvider.GetRequiredService<IFileWatcher>();
-            //     fileWatcher.Start();
-            //}
+         
             // using an interval timer
             //getting that paramater value from the configuration that we have in appsettings.json
             PeriodicTimer timer = new PeriodicTimer(TimeSpan.FromMilliseconds(settings.Value.CycleTime));

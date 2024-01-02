@@ -20,7 +20,7 @@ namespace PerformanceAuditing.Services
             this._workerSettings = workerSettings;
             this.logger=logger;
 
-            //Setup the FileSystemWatcher instance
+            //Setup the FileSystemWatcher instance, for us to detect if there are changes on the json file..
             var splittedpath = (workerSettings.Value.JSONFilePath??defaultJSON).Split('/');
             string directory = Path.Join(Environment.CurrentDirectory, splittedpath[0]);
             string file = splittedpath[1];
@@ -28,7 +28,7 @@ namespace PerformanceAuditing.Services
 
 
         }
-        //! this method simply loads data from the json file
+        //! this method simply loads data from the json file but also checks duplication
         public void SeedFromJson()
         {
 
@@ -72,7 +72,7 @@ namespace PerformanceAuditing.Services
                             #region -- new set of data (startup data based on the json)--
                             foreach (var item in record.URLs)
                             {
-                                //if(!_urls.Contains(item)) // Add if the url doesn't exist in the previous queue
+                               
                                 this.AddURL(item); //utilize the method, to check duplicates to the current collection
 
                             } 
@@ -106,13 +106,14 @@ namespace PerformanceAuditing.Services
 
 
         }
-
+        // for adding URL to the current Queue
         public void AddURL (string url)
         {
 
             if(!_urls.Contains(url))
                 _urls.Enqueue (url);
         }
+        // getting the next URL
         public string? NextUrl()
         {
             if(_urls.Count > 0)

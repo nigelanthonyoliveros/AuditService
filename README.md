@@ -1,4 +1,4 @@
- ## A test project in a company that I've been applying for, I just thought it's challenging and fun to solve.
+ ## A test project 
  
 It has a background worker that runs in a specified interval (cycle time) (this is configured in the appsettings.json)
 Has an URL management service
